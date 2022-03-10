@@ -6,116 +6,25 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/byteford/goproto/github.com/byteford/goproto/modules/click"
-	"github.com/google/uuid"
+	"github.com/byteford/proto/modules/msgError"
+	"github.com/byteford/proto/modules/user"
 	"google.golang.org/protobuf/proto"
 )
 
-var Users *click.Users
+var Users *user.Users
 
-func UserMoveToObj(b []byte) (*click.MoveUser, error) {
-	move := &click.MoveUser{}
+func UserMoveToObj(b []byte) (*user.MoveUser, error) {
+	move := &user.MoveUser{}
 	if err := proto.Unmarshal(b, move); err != nil {
 		return nil, err
 	}
 	return move, nil
 }
 
-func UserToObj(b []byte) (*click.User, error) {
-	User := &click.User{}
-	if err := proto.Unmarshal(b, User); err != nil {
-		return nil, err
-	}
-	return User, nil
-}
-
-func UserToByte(User *click.User) ([]byte, error) {
-	out, err := proto.Marshal(User)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func usersToByte(users *click.Users) ([]byte, error) {
-	out, err := proto.Marshal(users)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func errorToByte(error *click.Error) ([]byte, error) {
-	out, err := proto.Marshal(error)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func getUserFromId(id string) (*click.User, error) {
-	for _, user := range Users.User {
-		if id == user.Id {
-			return user, nil
-		}
-	}
-	return nil, fmt.Errorf("No user found")
-}
-
-func getUserFromName(name string) (*click.User, error) {
-	for _, user := range Users.User {
-		if name == user.Name {
-			return user, nil
-		}
-	}
-	return nil, fmt.Errorf("No user found")
-}
-
-func writeUser(w http.ResponseWriter, user *click.User) error {
-	out, err := UserToByte(user)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(out)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func writeError(w http.ResponseWriter, name string) error {
-	errobj := click.Error{
-		Name: name,
-	}
-	out, err := errorToByte(&errobj)
-	if err != nil {
-		return fmt.Errorf("error Marsheling error: %s \n", err)
-	}
-	w.WriteHeader(http.StatusBadRequest)
-	_, err = w.Write(out)
-	if err != nil {
-		return fmt.Errorf("error sending error: %s \n", err)
-	}
-	return nil
-}
-
-func addUser(user *click.User) (*click.User, error) {
-	for _, u := range Users.User {
-		if user.Name == u.Name {
-			return nil, fmt.Errorf("User already exsists")
-		}
-	}
-	user.AmountClicked = 0
-	user.Id = uuid.New().String()
-	user.Pos = &click.Position{X: 0, Y: 0}
-
-	Users.User = append(Users.User, user)
-	return user, nil
-
-}
 func newUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		err := writeError(w, "wrong method")
+		errmsg := msgError.Error{Name: "wrong method"}
+		err := errmsg.Write(w)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -125,18 +34,21 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	NewUser, err := UserToObj(body)
+
+	NewUser := &user.User{}
+	err = NewUser.ToObj(body)
 	if err != nil {
 		fmt.Printf("error in unmarshel: %s", err)
 	}
-	user, err := addUser(NewUser)
+	user, err := Users.AddUser(NewUser)
 	if err != nil {
-		err := writeError(w, err.Error())
+		errmsg := msgError.Error{Name: err.Error()}
+		err := errmsg.Write(w)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
-	err = writeUser(w, user)
+	err = user.Write(w)
 	if err != nil {
 		fmt.Printf("error sending user: %s", err)
 	}
@@ -144,38 +56,40 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 
 func root(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
+	//get all users
 	if len(params) == 0 {
-		out, err := usersToByte(Users)
+		out, err := Users.ToByte()
 		if err != nil {
 			fmt.Printf("error in UsersTobyte %s", err)
 		}
 		w.Write(out)
 	} else {
+		//get user by id
 		if id, ok := params["id"]; ok {
-			user, err := getUserFromId(id[0])
-			if err != nil {
-				fmt.Printf("error finding user: %s \n", user)
-				err := writeError(w, "no user found")
-				if err != nil {
-					fmt.Println(err)
-				}
+			user, err := Users.GetFromId(id[0])
+			if err == nil {
+				user.Write(w)
+				return
 			}
-			writeUser(w, user)
+			//get user by name
+		} else if name, ok := params["name"]; ok {
+			user, err := Users.GetFromName(name[0])
+			if err == nil {
+				user.Write(w)
+				return
+			}
 		}
-		if name, ok := params["name"]; ok {
-			user, err := getUserFromName(name[0])
-			if err != nil {
-				fmt.Printf("error finding user: %s \n", user)
-				err := writeError(w, "no user found")
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
-			writeUser(w, user)
+		//return error if cant find user
+		fmt.Printf("error finding user: %s \n", params)
+		errmsg := msgError.Error{Name: "No user found"}
+		err := errmsg.Write(w)
+		if err != nil {
+			fmt.Println(err)
 		}
 
 	}
 }
+
 func moveUser(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "PUT" {
@@ -183,24 +97,30 @@ func moveUser(w http.ResponseWriter, r *http.Request) {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
-		fmt.Println(body)
 		move, err := UserMoveToObj(body)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 		fmt.Println(move)
-		user, err := getUserFromId(move.UserId)
+		user, err := Users.GetFromId(move.UserId)
 		if err != nil {
 			fmt.Println(err)
+			errmsg := msgError.Error{Name: "No user found"}
+			err := errmsg.Write(w)
+			if err != nil {
+				fmt.Println(err)
+			}
+			return
 		}
-		fmt.Println(user)
-		user.Pos.X = user.Pos.X + move.Pos.X
-		user.Pos.Y = user.Pos.Y + move.Pos.Y
-		fmt.Println(user)
-		writeUser(w, user)
+		user.Move(move.Amount)
+
+		user.Write(w)
 	}
 }
+
 func router() {
 	http.HandleFunc("/", root)
 	http.HandleFunc("/new", newUser)
@@ -211,6 +131,6 @@ func router() {
 	}
 }
 func main() {
-	Users = &click.Users{}
+	Users = user.NewUsers()
 	router()
 }
