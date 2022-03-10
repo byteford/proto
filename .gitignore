@@ -2,3 +2,4 @@
 github.com/
 *_pb2.py
 __pycache__/
+*.pb.go
