@@ -9,8 +9,13 @@ message User {
   string name = 1;
   string id = 2;  // Unique ID number for this person.
   int64 amount_clicked = 3;
-
+  Position pos = 4;
   google.protobuf.Timestamp last_updated = 5;
+}
+
+message Position {
+  int32 x = 1;
+  int32 y = 2;
 }
 
 message Users{
@@ -19,4 +24,9 @@ message Users{
 
 message Error {
   string name = 1;
+}
+
+message MoveUser{
+  string user_id = 1;
+  Position pos = 2;
 }

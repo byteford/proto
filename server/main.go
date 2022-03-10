@@ -13,6 +13,14 @@ import (
 
 var Users *click.Users
 
+func UserMoveToObj(b []byte) (*click.MoveUser, error) {
+	move := &click.MoveUser{}
+	if err := proto.Unmarshal(b, move); err != nil {
+		return nil, err
+	}
+	return move, nil
+}
+
 func UserToObj(b []byte) (*click.User, error) {
 	User := &click.User{}
 	if err := proto.Unmarshal(b, User); err != nil {
@@ -20,6 +28,7 @@ func UserToObj(b []byte) (*click.User, error) {
 	}
 	return User, nil
 }
+
 func UserToByte(User *click.User) ([]byte, error) {
 	out, err := proto.Marshal(User)
 	if err != nil {
@@ -98,8 +107,9 @@ func addUser(user *click.User) (*click.User, error) {
 	}
 	user.AmountClicked = 0
 	user.Id = uuid.New().String()
-	Users.User = append(Users.User, user)
+	user.Pos = &click.Position{X: 0, Y: 0}
 
+	Users.User = append(Users.User, user)
 	return user, nil
 
 }
@@ -166,9 +176,35 @@ func root(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
+func moveUser(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "PUT" {
+		defer r.Body.Close()
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(body)
+		move, err := UserMoveToObj(body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(move)
+		user, err := getUserFromId(move.UserId)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(user)
+		user.Pos.X = user.Pos.X + move.Pos.X
+		user.Pos.Y = user.Pos.Y + move.Pos.Y
+		fmt.Println(user)
+		writeUser(w, user)
+	}
+}
 func router() {
 	http.HandleFunc("/", root)
 	http.HandleFunc("/new", newUser)
+	http.HandleFunc("/move", moveUser)
 	fmt.Println("Starting server")
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatal(err)

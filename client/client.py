@@ -38,7 +38,7 @@ def GetUsers():
         u.append(user)
     return u
 
-print("what is your username:")
+print("what is your username:", end='')
 username = input()
 user = GetUserByName(username)
 if user is None:
@@ -48,4 +48,15 @@ print("Connected as: ", user.name)
 #GetUser(user.id)
 
 
-
+move = click_pb2.MoveUser()
+move.user_id = user.id
+while True:
+    print("x:", end='')
+    x = input()
+    move.pos.x = int(x)
+    print("y:", end='')
+    y = input()
+    move.pos.y = int(y)
+    res = requests.put("http://127.0.0.1:3000/move", data=move.SerializeToString())
+    user = decodeUser(res)
+    print("Pos: x:", user.pos.x, " y:", user.pos.y)
