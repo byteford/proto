@@ -8,14 +8,14 @@ def decodeUser(res):
         res.close()
         print(err)
     if res.status_code == 200:
-        c = click_pb2.Click()
+        c = click_pb2.User()
         c.ParseFromString(res.content)
         res.close()
         return c
 
 def NewUser(name):
     print("making user: ", name)
-    c = click_pb2.Click()
+    c = click_pb2.User()
     c.name = name
     res = requests.post("http://127.0.0.1:3000/new", data=c.SerializeToString())
     return decodeUser(res)

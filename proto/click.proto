@@ -5,7 +5,7 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/byteford/goproto/modules/click";
 
-message Click {
+message User {
   string name = 1;
   string id = 2;  // Unique ID number for this person.
   int64 amount_clicked = 3;
@@ -14,7 +14,7 @@ message Click {
 }
 
 message Users{
-  repeated Click user = 1;
+  repeated User user = 1;
 }
 
 message Error {

@@ -13,15 +13,15 @@ import (
 
 var Users *click.Users
 
-func clickedToObj(b []byte) (*click.Click, error) {
-	clicked := &click.Click{}
-	if err := proto.Unmarshal(b, clicked); err != nil {
+func UserToObj(b []byte) (*click.User, error) {
+	User := &click.User{}
+	if err := proto.Unmarshal(b, User); err != nil {
 		return nil, err
 	}
-	return clicked, nil
+	return User, nil
 }
-func clickedToByte(clicked *click.Click) ([]byte, error) {
-	out, err := proto.Marshal(clicked)
+func UserToByte(User *click.User) ([]byte, error) {
+	out, err := proto.Marshal(User)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func errorToByte(error *click.Error) ([]byte, error) {
 	return out, nil
 }
 
-func getUserFromId(id string) (*click.Click, error) {
+func getUserFromId(id string) (*click.User, error) {
 	for _, user := range Users.User {
 		if id == user.Id {
 			return user, nil
@@ -53,7 +53,7 @@ func getUserFromId(id string) (*click.Click, error) {
 	return nil, fmt.Errorf("No user found")
 }
 
-func getUserFromName(name string) (*click.Click, error) {
+func getUserFromName(name string) (*click.User, error) {
 	for _, user := range Users.User {
 		if name == user.Name {
 			return user, nil
@@ -62,8 +62,8 @@ func getUserFromName(name string) (*click.Click, error) {
 	return nil, fmt.Errorf("No user found")
 }
 
-func writeUser(w http.ResponseWriter, user *click.Click) error {
-	out, err := clickedToByte(user)
+func writeUser(w http.ResponseWriter, user *click.User) error {
+	out, err := UserToByte(user)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func writeError(w http.ResponseWriter, name string) error {
 	return nil
 }
 
-func addUser(user *click.Click) (*click.Click, error) {
+func addUser(user *click.User) (*click.User, error) {
 	for _, u := range Users.User {
 		if user.Name == u.Name {
 			return nil, fmt.Errorf("User already exsists")
@@ -115,11 +115,11 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	clicked, err := clickedToObj(body)
+	NewUser, err := UserToObj(body)
 	if err != nil {
 		fmt.Printf("error in unmarshel: %s", err)
 	}
-	user, err := addUser(clicked)
+	user, err := addUser(NewUser)
 	if err != nil {
 		err := writeError(w, err.Error())
 		if err != nil {
