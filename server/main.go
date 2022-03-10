@@ -8,18 +8,9 @@ import (
 
 	"github.com/byteford/proto/modules/msgError"
 	"github.com/byteford/proto/modules/user"
-	"google.golang.org/protobuf/proto"
 )
 
 var Users *user.Users
-
-func UserMoveToObj(b []byte) (*user.MoveUser, error) {
-	move := &user.MoveUser{}
-	if err := proto.Unmarshal(b, move); err != nil {
-		return nil, err
-	}
-	return move, nil
-}
 
 func newUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -99,7 +90,8 @@ func moveUser(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
-		move, err := UserMoveToObj(body)
+		move := &user.MoveUser{}
+		err = move.ToObj(body)
 		if err != nil {
 			fmt.Println(err)
 			return
