@@ -1,22 +1,44 @@
 import click_pb2
 import requests
 
-c = click_pb2.Click()
-c.id = 1
-c.name = "James"
+def decodeUser(res):
+    if res.status_code == 400:
+        err = click_pb2.Error()
+        err.ParseFromString(res.content)
+        res.close()
+        print(err)
+    if res.status_code == 200:
+        c = click_pb2.Click()
+        c.ParseFromString(res.content)
+        res.close()
+        return c
 
-print(c.SerializeToString())
-
-res = requests.post("http://127.0.0.1:3000/new", data=c.SerializeToString())
-print(res)
-print(res.content)
-if res.status_code == 400:
-    err = click_pb2.Error()
-    err.ParseFromString(res.content)
-    res.close()
-    print(err)
-if res.status_code == 200:
+def NewUser(name):
+    print("making user: ", name)
     c = click_pb2.Click()
-    c.ParseFromString(res.content)
+    c.name = name
+    res = requests.post("http://127.0.0.1:3000/new", data=c.SerializeToString())
+    decodeUser(res)
+
+def GetUser(id):
+    print("get user from id: ", id)
+    res = requests.get("http://127.0.0.1:3000/", params={"id":id})
+    print(decodeUser(res))
+
+def GetUsers():
+    res = requests.get("http://127.0.0.1:3000/")
+    users = click_pb2.Users()
+    users.ParseFromString(res.content)
     res.close()
-    print(c)
+    u = []
+    for user in users.user:
+        u.append(user)
+    return u
+
+NewUser("James")
+NewUser("Bob")
+users = GetUsers()
+GetUser(users[0].id)
+
+
+
