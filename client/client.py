@@ -1,9 +1,10 @@
 import user_pb2
+import msgError_pb2
 import requests
 
 def decodeUser(res):
     if res.status_code == 400:
-        err = user_pb2.Error()
+        err = msgError_pb2.Error()
         err.ParseFromString(res.content)
         res.close()
         print(err)
@@ -53,10 +54,10 @@ move.user_id = user.id
 while True:
     print("x:", end='')
     x = input()
-    move.pos.x = int(x)
+    move.amount.x = int(x)
     print("y:", end='')
     y = input()
-    move.pos.y = int(y)
+    move.amount.y = int(y)
     res = requests.put("http://127.0.0.1:3000/move", data=move.SerializeToString())
     user = decodeUser(res)
     print("Pos: x:", user.pos.x, " y:", user.pos.y)

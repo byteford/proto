@@ -1,0 +1,9 @@
+syntax = "proto3";
+package msgError;
+
+option go_package = "modules/msgError";
+
+
+message Error {
+    string name = 1;
+  }

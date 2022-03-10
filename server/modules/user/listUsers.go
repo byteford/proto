@@ -41,7 +41,7 @@ func (list *Users) AddUser(user *User) (*User, error) {
 	}
 	user.AmountClicked = 0
 	user.Id = uuid.New().String()
-	user.Pos = &Position{X: 0, Y: 0}
+	user.Pos = &Vector2{X: 0, Y: 0}
 
 	list.User = append(list.User, user)
 	return user, nil

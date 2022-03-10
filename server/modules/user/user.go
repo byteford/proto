@@ -32,3 +32,8 @@ func (user *User) Write(w http.ResponseWriter) error {
 	}
 	return nil
 }
+
+func (user *User) Move(amount *Vector2) {
+	user.Pos.X = user.Pos.X + amount.X
+	user.Pos.Y = user.Pos.Y + amount.Y
+}

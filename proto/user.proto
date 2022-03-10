@@ -9,11 +9,11 @@ message User {
   string name = 1;
   string id = 2;  // Unique ID number for this person.
   int64 amount_clicked = 3;
-  Position pos = 4;
+  Vector2 pos = 4;
   google.protobuf.Timestamp last_updated = 5;
 }
 
-message Position {
+message Vector2 {
   int32 x = 1;
   int32 y = 2;
 }
@@ -22,11 +22,7 @@ message Users{
   repeated User user = 1;
 }
 
-message Error {
-  string name = 1;
-}
-
 message MoveUser{
   string user_id = 1;
-  Position pos = 2;
+  Vector2 amount = 2;
 }

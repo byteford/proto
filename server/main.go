@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/byteford/proto/modules/msgError"
 	"github.com/byteford/proto/modules/user"
 	"google.golang.org/protobuf/proto"
 )
@@ -20,33 +21,10 @@ func UserMoveToObj(b []byte) (*user.MoveUser, error) {
 	return move, nil
 }
 
-func errorToByte(error *user.Error) ([]byte, error) {
-	out, err := proto.Marshal(error)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func writeError(w http.ResponseWriter, name string) error {
-	errobj := user.Error{
-		Name: name,
-	}
-	out, err := errorToByte(&errobj)
-	if err != nil {
-		return fmt.Errorf("error Marsheling error: %s", err)
-	}
-	w.WriteHeader(http.StatusBadRequest)
-	_, err = w.Write(out)
-	if err != nil {
-		return fmt.Errorf("error sending error: %s", err)
-	}
-	return nil
-}
-
 func newUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		err := writeError(w, "wrong method")
+		errmsg := msgError.Error{Name: "wrong method"}
+		err := errmsg.Write(w)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -56,6 +34,7 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	NewUser := &user.User{}
 	err = NewUser.ToObj(body)
 	if err != nil {
@@ -63,7 +42,8 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := Users.AddUser(NewUser)
 	if err != nil {
-		err := writeError(w, err.Error())
+		errmsg := msgError.Error{Name: err.Error()}
+		err := errmsg.Write(w)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -76,6 +56,7 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 
 func root(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
+	//get all users
 	if len(params) == 0 {
 		out, err := Users.ToByte()
 		if err != nil {
@@ -83,27 +64,27 @@ func root(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(out)
 	} else {
+		//get user by id
 		if id, ok := params["id"]; ok {
 			user, err := Users.GetFromId(id[0])
-			if err != nil {
-				fmt.Printf("error finding user: %s \n", user)
-				err := writeError(w, "no user found")
-				if err != nil {
-					fmt.Println(err)
-				}
+			if err == nil {
+				user.Write(w)
+				return
 			}
-			user.Write(w)
-		}
-		if name, ok := params["name"]; ok {
+			//get user by name
+		} else if name, ok := params["name"]; ok {
 			user, err := Users.GetFromName(name[0])
-			if err != nil {
-				fmt.Printf("error finding user: %s \n", user)
-				err := writeError(w, "no user found")
-				if err != nil {
-					fmt.Println(err)
-				}
+			if err == nil {
+				user.Write(w)
+				return
 			}
-			user.Write(w)
+		}
+		//return error if cant find user
+		fmt.Printf("error finding user: %s \n", params)
+		errmsg := msgError.Error{Name: "No user found"}
+		err := errmsg.Write(w)
+		if err != nil {
+			fmt.Println(err)
 		}
 
 	}
@@ -116,21 +97,26 @@ func moveUser(w http.ResponseWriter, r *http.Request) {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
-		fmt.Println(body)
 		move, err := UserMoveToObj(body)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 		fmt.Println(move)
 		user, err := Users.GetFromId(move.UserId)
 		if err != nil {
 			fmt.Println(err)
+			errmsg := msgError.Error{Name: "No user found"}
+			err := errmsg.Write(w)
+			if err != nil {
+				fmt.Println(err)
+			}
+			return
 		}
-		fmt.Println(user)
-		user.Pos.X = user.Pos.X + move.Pos.X
-		user.Pos.Y = user.Pos.Y + move.Pos.Y
-		fmt.Println(user)
+		user.Move(move.Amount)
+
 		user.Write(w)
 	}
 }
