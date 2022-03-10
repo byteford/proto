@@ -1,9 +1,9 @@
 syntax = "proto3";
-package main;
+package user;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/byteford/goproto/modules/click";
+option go_package = "modules/user";
 
 message User {
   string name = 1;

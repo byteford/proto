@@ -1,21 +1,21 @@
-import click_pb2
+import user_pb2
 import requests
 
 def decodeUser(res):
     if res.status_code == 400:
-        err = click_pb2.Error()
+        err = user_pb2.Error()
         err.ParseFromString(res.content)
         res.close()
         print(err)
     if res.status_code == 200:
-        c = click_pb2.User()
+        c = user_pb2.User()
         c.ParseFromString(res.content)
         res.close()
         return c
 
 def NewUser(name):
     print("making user: ", name)
-    c = click_pb2.User()
+    c = user_pb2.User()
     c.name = name
     res = requests.post("http://127.0.0.1:3000/new", data=c.SerializeToString())
     return decodeUser(res)
@@ -30,7 +30,7 @@ def GetUserByName(name):
 
 def GetUsers():
     res = requests.get("http://127.0.0.1:3000/")
-    users = click_pb2.Users()
+    users = user_pb2.Users()
     users.ParseFromString(res.content)
     res.close()
     u = []
@@ -48,7 +48,7 @@ print("Connected as: ", user.name)
 #GetUser(user.id)
 
 
-move = click_pb2.MoveUser()
+move = user_pb2.MoveUser()
 move.user_id = user.id
 while True:
     print("x:", end='')
