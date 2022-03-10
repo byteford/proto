@@ -1,14 +1,22 @@
-import proto.click_pb2
+import click_pb2
 import requests
 
-c = proto.click_pb2.Click()
+c = click_pb2.Click()
 c.id = 1
 c.name = "James"
 
 print(c.SerializeToString())
-f = open ("./temp.txt", "wb")
-f.write(c.SerializeToString())
-f.close()
 
-res = requests.get("http://127.0.0.1:3000/", params=c.SerializeToString())
+res = requests.post("http://127.0.0.1:3000/new", data=c.SerializeToString())
+print(res)
 print(res.content)
+if res.status_code == 400:
+    err = click_pb2.Error()
+    err.ParseFromString(res.content)
+    res.close()
+    print(err)
+if res.status_code == 200:
+    c = click_pb2.Click()
+    c.ParseFromString(res.content)
+    res.close()
+    print(c)

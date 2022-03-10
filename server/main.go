@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,14 +10,37 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func lambdaHander(ctx context.Context, input []byte) {
-	fmt.Println(input)
+func toClicked(b []byte) (*click.Click, error) {
 	clicked := &click.Click{}
-	err := proto.Unmarshal(input, clicked)
-	if err != nil {
-		log.Fatalln("Failed to unencode: ", err)
+	if err := proto.Unmarshal(b, clicked); err != nil {
+		return nil, err
 	}
-	fmt.Println(clicked.AmountClicked)
+	return clicked, nil
+}
+
+func errorToByte(error *click.Error) ([]byte, error) {
+	out, err := proto.Marshal(error)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func newUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		errobj := click.Error{
+			Name: "wrong method",
+		}
+		out, err := errorToByte(&errobj)
+		if err != nil {
+			fmt.Printf("error Marsheling error: %s \n", err)
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		_, err = w.Write(out)
+		if err != nil {
+			fmt.Printf("error sending error: %s \n", err)
+		}
+	}
 }
 func root(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r)
@@ -27,12 +49,16 @@ func root(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(body)
-	w.Write([]byte("yay"))
+	clicked, err := toClicked(body)
+	if err != nil {
+		fmt.Printf("error in unmarshel: %s", err)
+	}
+	fmt.Printf("name: %s \n", clicked.Name)
+	w.Write([]byte(clicked.Name))
 }
 func router() {
 	http.HandleFunc("/", root)
-
+	http.HandleFunc("/new", newUser)
 	fmt.Println("Starting server")
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatal(err)
