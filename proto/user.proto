@@ -19,7 +19,7 @@ message Vector2 {
 }
 
 message Users{
-  repeated User user = 1;
+  map<string, User> list = 1; 
 }
 
 message MoveUser{

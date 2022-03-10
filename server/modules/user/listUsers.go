@@ -7,17 +7,21 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+func NewUsers() *Users {
+	u := new(Users)
+	u.List = make(map[string]*User)
+	return u
+}
+
 func (list *Users) GetFromId(id string) (*User, error) {
-	for _, user := range list.User {
-		if id == user.Id {
-			return user, nil
-		}
+	if val, ok := list.List[id]; ok {
+		return val, nil
 	}
 	return nil, fmt.Errorf("no user found")
 }
 
 func (list *Users) GetFromName(name string) (*User, error) {
-	for _, user := range list.User {
+	for _, user := range list.List {
 		if name == user.Name {
 			return user, nil
 		}
@@ -34,16 +38,15 @@ func (list *Users) ToByte() ([]byte, error) {
 }
 
 func (list *Users) AddUser(user *User) (*User, error) {
-	for _, u := range list.User {
-		if user.Name == u.Name {
-			return nil, fmt.Errorf("user already exsists")
-		}
+	_, err := list.GetFromName(user.Name)
+	if err == nil {
+		return nil, fmt.Errorf("user already exsists")
 	}
 	user.AmountClicked = 0
 	user.Id = uuid.New().String()
 	user.Pos = &Vector2{X: 0, Y: 0}
 
-	list.User = append(list.User, user)
+	list.List[user.Id] = user
 	return user, nil
 
 }

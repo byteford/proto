@@ -131,6 +131,6 @@ func router() {
 	}
 }
 func main() {
-	Users = &user.Users{}
+	Users = user.NewUsers()
 	router()
 }
