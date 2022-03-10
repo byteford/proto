@@ -18,12 +18,15 @@ def NewUser(name):
     c = click_pb2.Click()
     c.name = name
     res = requests.post("http://127.0.0.1:3000/new", data=c.SerializeToString())
-    decodeUser(res)
+    return decodeUser(res)
 
-def GetUser(id):
-    print("get user from id: ", id)
+def GetUserById(id):
     res = requests.get("http://127.0.0.1:3000/", params={"id":id})
-    print(decodeUser(res))
+    return decodeUser(res)
+
+def GetUserByName(name):
+    res = requests.get("http://127.0.0.1:3000/", params={"name":name})
+    return decodeUser(res)
 
 def GetUsers():
     res = requests.get("http://127.0.0.1:3000/")
@@ -35,10 +38,14 @@ def GetUsers():
         u.append(user)
     return u
 
-NewUser("James")
-NewUser("Bob")
-users = GetUsers()
-GetUser(users[0].id)
+print("what is your username:")
+username = input()
+user = GetUserByName(username)
+if user is None:
+    user = NewUser(username)
+print("Connected as: ", user.name)
+#users = GetUsers()
+#GetUser(user.id)
 
 
 
