@@ -1,5 +1,4 @@
 .DS_Store
-github.com/
 *_pb2.py
 __pycache__/
 *.pb.go
