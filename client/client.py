@@ -35,8 +35,8 @@ def GetUsers():
     users.ParseFromString(res.content)
     res.close()
     u = []
-    for user in users.user:
-        u.append(user)
+    for key in users.list:
+        u.append(users.list[key])
     return u
 
 print("what is your username:", end='')
@@ -45,7 +45,8 @@ user = GetUserByName(username)
 if user is None:
     user = NewUser(username)
 print("Connected as: ", user.name)
-#users = GetUsers()
+users = GetUsers()
+print(users)
 #GetUser(user.id)
 
 

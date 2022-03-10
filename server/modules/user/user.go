@@ -1,7 +1,7 @@
 package user
 
 import (
-	"net/http"
+	"io"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -21,7 +21,7 @@ func (user *User) ToByte() ([]byte, error) {
 	return out, nil
 }
 
-func (user *User) Write(w http.ResponseWriter) error {
+func (user *User) Write(w io.Writer) error {
 	out, err := user.ToByte()
 	if err != nil {
 		return err

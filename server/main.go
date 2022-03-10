@@ -12,6 +12,8 @@ import (
 
 var Users *user.Users
 
+//newUser is called when you go to url /new with a POST request.
+//adds a user to the map
 func newUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		errmsg := msgError.Error{Name: "wrong method"}
@@ -45,6 +47,8 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//root is called when you go to the url /
+//if no params returns list of users. or returns user bases on id or name
 func root(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	//get all users
@@ -81,6 +85,8 @@ func root(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//moveUser is called when you go to the url /move
+//triggures to move user by given amount
 func moveUser(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "PUT" {
